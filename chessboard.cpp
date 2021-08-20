@@ -18,6 +18,7 @@ const static std::pair<int,int> HQs[]={std::make_pair(3,2),std::make_pair(3,4),
 
 ChessBoard::ChessBoard(QWidget *parent): QLabel(parent)
 {
+    Rounds=0;
     InTurn=false;
     PlayerColor=0;
     Selected=nullptr;
@@ -27,10 +28,8 @@ ChessBoard::ChessBoard(QWidget *parent): QLabel(parent)
         {
             pChess[i][j]=new Chess(this,this);
             pChess[i][j]->setPos(i,j);
-            pChess[i][j]->setType((i+j)%21);
-            //pChess[i][j]->setType(24);
+            pChess[i][j]->setType(24);
             //pChess[i][j]->swapHide(); //set to hide
-            pChess[i][j]->show();
             connect(pChess[i][j],&Chess::ChessClicked,this,&ChessBoard::HandlePressChess);
         }
     }
@@ -41,7 +40,12 @@ ChessBoard::ChessBoard(QWidget *parent): QLabel(parent)
         --RemainSecond;
         pMainWindow->setLCDTime(RemainSecond);
         if(RemainSecond==0)
-            pMainWindow->Timeout(),TurnEnd();
+        {
+            ++TimeoutTimes;
+            TurnEnd();
+            if(TimeoutTimes==3)
+                pMainWindow->SendEndGame(0),pMainWindow->EndGame(0);
+        }
         else
             pTimer1s->start();
     });
@@ -56,7 +60,7 @@ void ChessBoard::paintEvent(QPaintEvent *event)
 
 void ChessBoard::mousePressEvent(QMouseEvent *event)
 {
-    //qDebug()<<event->position()<<Qt::endl;
+    qDebug()<<event->position()<<Qt::endl;
     //Disselect
     if(Selected!=nullptr)
     {
@@ -78,7 +82,10 @@ void ChessBoard::HandlePressChess(int x, int y)
     {
         //handle move & attack
         if(Selected!=pChess[x][y])
-            HandleTwoChessInteract(Selected->GetX(),Selected->GetY(),x,y);
+        {
+            if(HandleTwoChessInteract(Selected->GetX(),Selected->GetY(),x,y))
+                TurnEnd();
+        }
         Selected->setPress(0);
         pChess[x][y]->setPress(0);
         Selected=nullptr;
@@ -86,23 +93,23 @@ void ChessBoard::HandlePressChess(int x, int y)
     qDebug("Handled %d %d nullptr:%d\n",x,y,Selected==nullptr);
 }
 
-void ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
+bool ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
 {
     //qDebug("(%d,%d) -> (%d,%d) Accessibility type0:%d, type1:%d",sx,sy,dx,dy, CheckAccessibility(sx,sy,dx,dy,0),
     //       CheckAccessibility(sx,sy,dx,dy,1));
     if(pChess[sx][sy]->checkHidden() || pChess[dx][dy]->checkHidden())
-        return;
+        return false;
     if((pChess[sx][sy]->getType() & 1) != (pChess[dx][dy]->getType() & 1))
     {
         //attack
         if(!CheckAccessibility(sx,sy,dx,dy, pChess[sx][sy]->getType() >> 1 == 0))
-            return;
+            return false;
         std::pair<int,int> D=std::make_pair(dx,dy);
         for(const std::pair<int,int>& HQ:HQs)
             if(D==HQ)
-                return;
-        int SLevel=std::min(9, pChess[sx][sy]->getType() >> 1),DLevel=std::min(9, pChess[dx][dy]->getType() >> 1);
-        if(pChess[dx][dy]->getType()>>1==11)
+                return false;
+        int SLevel=pChess[sx][sy]->getType()>>1,DLevel=pChess[dx][dy]->getType()>>1;
+        if(pChess[dx][dy]->getType()>>1==11) //Capture the flag
         {
             if(checkMineClear(PlayerColor^1))
             {
@@ -110,15 +117,20 @@ void ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
                 std::swap(pChess[sx][sy],pChess[dx][dy]);
                 pChess[sx][sy]->setPos(sx,sy);
                 pChess[dx][dy]->setPos(dx,dy);
-                pMainWindow->SendWinGame();
+                pMainWindow->SendEndGame(1);
+                pMainWindow->EndGame(1);
+                return true;
             }
         }
-        else if(SLevel==0&&pChess[dx][dy]->getType()>>1==9)
+        else if(pChess[dx][dy]->getType()>>1==9) //Mine
         {
+            if(SLevel!=0)
+                return false;
             pChess[dx][dy]->setType(24);
             std::swap(pChess[sx][sy],pChess[dx][dy]);
             pChess[sx][sy]->setPos(sx,sy);
             pChess[dx][dy]->setPos(dx,dy);
+            return true;
         }
         else if(SLevel>DLevel)
         {
@@ -126,6 +138,7 @@ void ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
             std::swap(pChess[sx][sy],pChess[dx][dy]);
             pChess[sx][sy]->setPos(sx,sy);
             pChess[dx][dy]->setPos(dx,dy);
+            return true;
         }
         else if(SLevel<DLevel)
         {
@@ -133,11 +146,13 @@ void ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
             std::swap(pChess[sx][sy],pChess[dx][dy]);
             pChess[sx][sy]->setPos(sx,sy);
             pChess[dx][dy]->setPos(dx,dy);
+            return true;
         }
         else
         {
             pChess[sx][sy]->setType(24);
             pChess[dx][dy]->setType(24);
+            return true;
         }
     }
     if(pChess[dx][dy]->CheckEmpty())
@@ -148,8 +163,12 @@ void ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
             std::swap(pChess[sx][sy],pChess[dx][dy]);
             pChess[sx][sy]->setPos(sx,sy);
             pChess[dx][dy]->setPos(dx,dy);
+            return true;
         }
+        else
+            return false;
     }
+    return false;
 }
 
 //BFS
@@ -211,6 +230,7 @@ bool ChessBoard::CheckAccessibility(int sx, int sy, int dx, int dy, int type) //
 
 void ChessBoard::DecodeBoard(const QByteArray& s)
 {
+    ++Rounds;
     for(int x=1;x<=12;x++)
         for(int y=1;y<=5;y++)
         {
@@ -246,7 +266,9 @@ void ChessBoard::TurnBegin()
 
 void ChessBoard::TurnEnd()
 {
+    ++Rounds;
     InTurn=false;
+    pMainWindow->SendBoard();
 }
 
 void ChessBoard::setpMainWindow(MainWindow *p)
@@ -261,4 +283,27 @@ bool ChessBoard::checkMineClear(int c) const
             if(pChess[x][y]->getType()==18+c)
                 return false;
    return true;
+}
+
+QByteArray ChessBoard::EncodeBoard() const
+{
+    QByteArray msg;
+    msg.append((char)5);
+    for(int x=1;x<=12;x++)
+        for(int y=1;y<=5;y++)
+            msg.append((char)((pChess[x][y]->getType()<<1)|pChess[x][y]->checkHidden()));
+    return msg;
+}
+
+void ChessBoard::setRounds(int _rounds)
+{
+    Rounds=_rounds;
+}
+
+void ChessBoard::AdmitDefeat()
+{
+    if(Rounds<20)
+        QMessageBox::information(nullptr,"Defeat Fail","Defeat Fail! You can only defeat after 20 rounds.");
+    else
+        pMainWindow->SendEndGame(0),pMainWindow->EndGame(0);
 }

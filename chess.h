@@ -42,18 +42,18 @@ namespace CHESS_DEFAULT{
     const int DefaultWidth=68,DefaultHeight=34;
 
     const QPoint Positions[13][6]={{},
-                                   {QPoint(),QPoint(13,14),QPoint(120,14),QPoint(241,14),QPoint(324,14),QPoint(428,14)},
-                                   {QPoint(),QPoint(13,61),QPoint(120,61),QPoint(241,61),QPoint(324,61),QPoint(428,61)},
-                                   {QPoint(),QPoint(13,107),QPoint(120,107),QPoint(241,107),QPoint(324,107),QPoint(428,107)},
-                                   {QPoint(),QPoint(13,154),QPoint(120,154),QPoint(241,154),QPoint(324,154),QPoint(428,154)},
-                                   {QPoint(),QPoint(13,201),QPoint(120,201),QPoint(241,201),QPoint(324,201),QPoint(428,201)},
-                                   {QPoint(),QPoint(13,249),QPoint(120,249),QPoint(241,249),QPoint(324,249),QPoint(428,249)},
-                                   {QPoint(),QPoint(13,396),QPoint(120,396),QPoint(241,396),QPoint(324,396),QPoint(428,396)},
-                                   {QPoint(),QPoint(13,443),QPoint(120,443),QPoint(241,443),QPoint(324,443),QPoint(428,443)},
-                                   {QPoint(),QPoint(13,490),QPoint(120,490),QPoint(241,490),QPoint(324,490),QPoint(428,490)},
-                                   {QPoint(),QPoint(13,537),QPoint(120,537),QPoint(241,537),QPoint(324,537),QPoint(428,537)},
-                                   {QPoint(),QPoint(13,584),QPoint(120,584),QPoint(241,584),QPoint(324,584),QPoint(428,584)},
-                                   {QPoint(),QPoint(13,630),QPoint(120,630),QPoint(241,630),QPoint(324,630),QPoint(428,630)}};
+                                   {QPoint(),QPoint(13,14),QPoint(120,14),QPoint(222,14),QPoint(324,14),QPoint(428,14)},
+                                   {QPoint(),QPoint(13,61),QPoint(120,61),QPoint(222,61),QPoint(324,61),QPoint(428,61)},
+                                   {QPoint(),QPoint(13,107),QPoint(120,107),QPoint(222,107),QPoint(324,107),QPoint(428,107)},
+                                   {QPoint(),QPoint(13,154),QPoint(120,154),QPoint(222,154),QPoint(324,154),QPoint(428,154)},
+                                   {QPoint(),QPoint(13,201),QPoint(120,201),QPoint(222,201),QPoint(324,201),QPoint(428,201)},
+                                   {QPoint(),QPoint(13,249),QPoint(120,249),QPoint(222,249),QPoint(324,249),QPoint(428,249)},
+                                   {QPoint(),QPoint(13,396),QPoint(120,396),QPoint(222,396),QPoint(324,396),QPoint(428,396)},
+                                   {QPoint(),QPoint(13,443),QPoint(120,443),QPoint(222,443),QPoint(324,443),QPoint(428,443)},
+                                   {QPoint(),QPoint(13,490),QPoint(120,490),QPoint(222,490),QPoint(324,490),QPoint(428,490)},
+                                   {QPoint(),QPoint(13,537),QPoint(120,537),QPoint(222,537),QPoint(324,537),QPoint(428,537)},
+                                   {QPoint(),QPoint(13,584),QPoint(120,584),QPoint(222,584),QPoint(324,584),QPoint(428,584)},
+                                   {QPoint(),QPoint(13,630),QPoint(120,630),QPoint(222,630),QPoint(324,630),QPoint(428,630)}};
 }
 
 class ChessBoard;

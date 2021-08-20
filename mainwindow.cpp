@@ -8,6 +8,13 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    HandShakeOK=false;
+
+    pBoard=ui->label;
+    pBoard->setpMainWindow(this);
+
+    ui->lcdNumber->display(20);
+
     actionConnectToServer=new QAction(this);
     actionConnectToServer->setText("Connect to server");
     ui->menuConnect->addAction(actionConnectToServer);
@@ -27,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(actionConnectToServer,&QAction::triggered,this,&MainWindow::ConnectToServer);
     connect(actionCreateConnection,&QAction::triggered,this,&MainWindow::CreateConnection);
     connect(actionStart,&QAction::triggered,this, &MainWindow::ReadyGame);
-    connect(actionAdmitDefeat,&QAction::triggered,this,&MainWindow::AdmitDefeat);
+    connect(actionAdmitDefeat,&QAction::triggered,pBoard,&ChessBoard::AdmitDefeat);
 
     connect(ui->pushButton,&QPushButton::clicked,actionStart,&QAction::triggered);
     connect(ui->pushButton_2,&QPushButton::clicked,actionAdmitDefeat,&QAction::triggered);
@@ -41,14 +48,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(pTSocket,&QTcpSocket::readyRead,this,&MainWindow::HandleTransmission);
     connect(pTSocket,&QTcpSocket::connected,[&](){ReportConnectResult(1);});
     connect(pTSocket,&QTcpSocket::disconnected,[&](){ReportConnectResult(2);});
-
-    HandShakeOK=false;
-
-    pBoard=ui->label;
-    pBoard->setpMainWindow(this);
-
-    ui->lcdNumber->display(20);
-    pBoard->TurnBegin();
 }
 
 MainWindow::~MainWindow()
@@ -75,11 +74,6 @@ void MainWindow::ReadyGame()
     {
         QMessageBox::information(nullptr,"Please connect to server.","Please connect to server.");
     }
-}
-
-void MainWindow::AdmitDefeat()
-{
-    qDebug()<<"Admit Defeat"<<Qt::endl;
 }
 
 void MainWindow::SaveIP(QString IP)
@@ -120,8 +114,8 @@ void MainWindow::HandleTransmission()
         case 0:Handshake();break;
         case 2:StartGame((int)msg.constData()[1]);break;
         case 4:SetColor((int)msg.constData()[1]);break;
-        case 8:BoardSynchronize(msg);break;
-        case 10:EndGame((int)msg.constData()[1]);break;
+        case 5:BoardSynchronize(msg);break;
+        case 7:EndGame((int)msg.constData()[1]);break;
         default:;
     }
 }
@@ -143,6 +137,7 @@ void MainWindow::StartGame(int First)
 {
     if(First)
         pBoard->TurnBegin();
+    pBoard->setRounds(0);
 }
 
 void MainWindow::BoardSynchronize(const QByteArray &s)
@@ -150,22 +145,15 @@ void MainWindow::BoardSynchronize(const QByteArray &s)
     pBoard->DecodeBoard(s);
 }
 
-void MainWindow::Timeout()
-{
-    QByteArray msg;
-    msg.append((char)9);
-    pTSocket->write(msg);
-}
-
 void MainWindow::setLCDTime(int t)
 {
     ui->lcdNumber->display(t);
 }
 
-void MainWindow::SendWinGame()
+void MainWindow::SendEndGame(int result)
 {
     QByteArray msg;
-    msg.append((char)11);
+    msg.append((char)8);
     pTSocket->write(msg);
 }
 
@@ -175,4 +163,10 @@ void MainWindow::EndGame(int result)
         QMessageBox::information(nullptr,"Game Ended!","Game Ended! You Win!");
     else
         QMessageBox::information(nullptr,"Game Ended!","Game Ended! You Lose!");
+}
+
+void MainWindow::SendBoard()
+{
+    QByteArray msg=pBoard->EncodeBoard();
+    pTSocket->write(msg);
 }

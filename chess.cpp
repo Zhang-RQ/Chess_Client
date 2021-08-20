@@ -8,6 +8,11 @@
 
 using namespace CHESS_DEFAULT;
 
+const static std::pair<int,int> HQs[]={std::make_pair(3,2),std::make_pair(3,4),
+                                       std::make_pair(4,3),std::make_pair(5,2),std::make_pair(5,4),
+                                       std::make_pair(8,2),std::make_pair(8,4),
+                                       std::make_pair(9,3),std::make_pair(10,2),std::make_pair(10,4)};
+
 Chess::Chess(ChessBoard *_pBoard,QWidget *parent,int _type,int hidden):QLabel(parent)
 {
     x=0,y=0;
@@ -25,6 +30,14 @@ void Chess::setPos(int _x,int _y)
 {
     x=_x;y=_y;
     this->setGeometry(Positions[x][y].x(), Positions[x][y].y(), DefaultWidth ,DefaultHeight);
+    std::pair<int,int> T=std::make_pair(x,y);
+    bool f=false;
+    for(const std::pair<int,int>& HQ:HQs)
+        f|=HQ==T;
+    if(type>>1==12&&f)
+        this->hide();
+    else
+        this->show();
     this->update();
 }
 

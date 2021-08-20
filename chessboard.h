@@ -7,6 +7,7 @@
 
 #include <QObject>
 #include <QLabel>
+#include <QMessageBox>
 #include "chess.h"
 #include "mainwindow.h"
 
@@ -27,6 +28,8 @@ public:
     void TurnEnd();
     void setpMainWindow(MainWindow *p);
     bool checkMineClear(int c) const;
+    QByteArray EncodeBoard() const;
+    void setRounds(int _rounds);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -36,12 +39,14 @@ private:
     Chess *pChess[13][6],*Selected;
     bool InTurn;
     int PlayerColor,RemainSecond; //0 blue,1 red
-    void HandleTwoChessInteract(int sx,int sy,int dx,int dy);
+    bool HandleTwoChessInteract(int sx,int sy,int dx,int dy);
     QTimer *pTimer1s;
     MainWindow *pMainWindow;
+    int Rounds,TimeoutTimes;
 
 public slots:
     void HandlePressChess(int x,int y);
+    void AdmitDefeat();
 };
 
 #endif //CHESS_CLIENT_CHESSBOARD_H

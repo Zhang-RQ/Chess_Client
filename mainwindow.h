@@ -25,10 +25,10 @@ public:
     void SetColor(int C);
     void StartGame(int First);
     void BoardSynchronize(const QByteArray& s);
-    void Timeout();
     bool HandShakeOK;
     void setLCDTime(int t);
-    void SendWinGame();
+    void SendEndGame(int result);
+    void SendBoard();
     void EndGame(int result);
 
 private:
@@ -42,7 +42,6 @@ private:
 public slots:
     void ConnectToServer();
     void ReadyGame();
-    void AdmitDefeat();
     void SaveIP(QString IP);
     void CreateConnection();
     void HandleTransmission();
