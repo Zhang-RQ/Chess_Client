@@ -1,0 +1,35 @@
+<RCC>
+  <qresource>
+    <file>resource/Acommander_blue.png</file>
+    <file>resource/Acommander_red.png</file>
+    <file>resource/backgroud.jpg</file>
+    <file>resource/bomb_blue.png</file>
+    <file>resource/bomb_red.png</file>
+    <file>resource/brigadier_blue.png</file>
+    <file>resource/brigadier_red.png</file>
+    <file>resource/camp_empty.png</file>
+    <file>resource/Ccommander_blue.png</file>
+    <file>resource/Ccommander_red.png</file>
+    <file>resource/chessboard.png</file>
+    <file>resource/chessboard_empty.png</file>
+    <file>resource/chessboard2.png</file>
+    <file>resource/commander_blue.png</file>
+    <file>resource/commander_red.png</file>
+    <file>resource/engineer_blue.png</file>
+    <file>resource/engineer_red.png</file>
+    <file>resource/flag_blue.png</file>
+    <file>resource/flag_red.png</file>
+    <file>resource/mine_blue.png</file>
+    <file>resource/mine_red.png</file>
+    <file>resource/Pcommander_blue.png</file>
+    <file>resource/Pcommander_red.png</file>
+    <file>resource/placeholder.png</file>
+    <file>resource/placeholder_unknown.png</file>
+    <file>resource/Scommander_red.png</file>
+    <file>resource/Scommander_blue.png</file>
+    <file>resource/Tcommander_blue.png</file>
+    <file>resource/Tcommander_red.png</file>
+    <file>resource/Ycommander_blue.png</file>
+    <file>resource/Ycommander_red.png</file>
+  </qresource>
+</RCC>
