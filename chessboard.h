@@ -8,7 +8,9 @@
 #include <QObject>
 #include <QLabel>
 #include "chess.h"
+#include "mainwindow.h"
 
+class MainWindow;
 class Chess;
 
 class ChessBoard : public QLabel{
@@ -17,6 +19,14 @@ class ChessBoard : public QLabel{
 public:
     explicit ChessBoard(QWidget *parent=nullptr);
     bool CheckAccessibility(int sx,int sy,int dx,int dy,int type);
+    void DecodeBoard(const QByteArray& s);
+    void setPlayerColor(int C);
+    int getPlayerColor() const;
+    bool getInTurn() const;
+    void TurnBegin();
+    void TurnEnd();
+    void setpMainWindow(MainWindow *p);
+    bool checkMineClear(int c) const;
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -24,8 +34,11 @@ protected:
 
 private:
     Chess *pChess[13][6],*Selected;
-    int PlayerColor; //0 blue,1 red
+    bool InTurn;
+    int PlayerColor,RemainSecond; //0 blue,1 red
     void HandleTwoChessInteract(int sx,int sy,int dx,int dy);
+    QTimer *pTimer1s;
+    MainWindow *pMainWindow;
 
 public slots:
     void HandlePressChess(int x,int y);

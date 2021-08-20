@@ -18,7 +18,7 @@ find_package(Qt6 COMPONENTS
 add_executable(Chess_Client main.cpp mainwindow.cpp
         resource.qrc chessboard.cpp
         chessboard.h mainwindow.ui chess.cpp chess.h
-        connectwidget.cpp connectwidget.h connectwidget.ui iperrordialog.cpp iperrordialog.h iperrordialog.ui)
+        connectwidget.cpp connectwidget.h connectwidget.ui)
 target_link_libraries(Chess_Client
         Qt::Core
         Qt::Gui

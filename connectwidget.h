@@ -7,7 +7,6 @@
 
 #include <QWidget>
 #include <QString>
-#include "iperrordialog.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -24,7 +23,6 @@ public:
 
 private:
     Ui::ConnectWidget *ui;
-    IPErrorDialog *pIPErrorDialog;
 
 private slots:
     void EnterChar(char c);

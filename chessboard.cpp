@@ -18,6 +18,7 @@ const static std::pair<int,int> HQs[]={std::make_pair(3,2),std::make_pair(3,4),
 
 ChessBoard::ChessBoard(QWidget *parent): QLabel(parent)
 {
+    InTurn=false;
     PlayerColor=0;
     Selected=nullptr;
     for(int i=1;i<=12;i++)
@@ -26,13 +27,24 @@ ChessBoard::ChessBoard(QWidget *parent): QLabel(parent)
         {
             pChess[i][j]=new Chess(this,this);
             pChess[i][j]->setPos(i,j);
-            //pChess[i][j]->setType((i+j)%21);
-            pChess[i][j]->setType(22);
-            pChess[i][j]->swapHide(); //set to hide
+            pChess[i][j]->setType((i+j)%21);
+            //pChess[i][j]->setType(24);
+            //pChess[i][j]->swapHide(); //set to hide
             pChess[i][j]->show();
             connect(pChess[i][j],&Chess::ChessClicked,this,&ChessBoard::HandlePressChess);
         }
     }
+    pTimer1s=new QTimer(this);
+    pTimer1s->setInterval(1000);
+    connect(pTimer1s,&QTimer::timeout,[&]()
+    {
+        --RemainSecond;
+        pMainWindow->setLCDTime(RemainSecond);
+        if(RemainSecond==0)
+            pMainWindow->Timeout(),TurnEnd();
+        else
+            pTimer1s->start();
+    });
 }
 
 void ChessBoard::paintEvent(QPaintEvent *event)
@@ -55,8 +67,13 @@ void ChessBoard::mousePressEvent(QMouseEvent *event)
 
 void ChessBoard::HandlePressChess(int x, int y)
 {
+    if(!InTurn)
+        return;
     if(Selected==nullptr)
-        Selected=pChess[x][y];
+    {
+        if((pChess[x][y]->getType() & 1) == PlayerColor)
+            Selected=pChess[x][y];
+    }
     else
     {
         //handle move & attack
@@ -73,42 +90,60 @@ void ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
 {
     //qDebug("(%d,%d) -> (%d,%d) Accessibility type0:%d, type1:%d",sx,sy,dx,dy, CheckAccessibility(sx,sy,dx,dy,0),
     //       CheckAccessibility(sx,sy,dx,dy,1));
-    if(pChess[sx][sy]->CheckHidden()||pChess[dx][dy]->CheckHidden())
+    if(pChess[sx][sy]->checkHidden() || pChess[dx][dy]->checkHidden())
         return;
-    if((pChess[sx][sy]->GetType()&1)!=(pChess[dx][dy]->GetType()&1))
+    if((pChess[sx][sy]->getType() & 1) != (pChess[dx][dy]->getType() & 1))
     {
         //attack
-        if(!CheckAccessibility(sx,sy,dx,dy,pChess[sx][sy]->GetType()>>1==0))
+        if(!CheckAccessibility(sx,sy,dx,dy, pChess[sx][sy]->getType() >> 1 == 0))
             return;
         std::pair<int,int> D=std::make_pair(dx,dy);
         for(const std::pair<int,int>& HQ:HQs)
             if(D==HQ)
                 return;
-        int SLevel=std::min(9,pChess[sx][sy]->GetType()>>1),DLevel=std::min(9,pChess[dx][dy]->GetType()>>1);
-        if(SLevel>DLevel)
+        int SLevel=std::min(9, pChess[sx][sy]->getType() >> 1),DLevel=std::min(9, pChess[dx][dy]->getType() >> 1);
+        if(pChess[dx][dy]->getType()>>1==11)
         {
-            pChess[dx][dy]->setType(22);
+            if(checkMineClear(PlayerColor^1))
+            {
+                pChess[dx][dy]->setType(24);
+                std::swap(pChess[sx][sy],pChess[dx][dy]);
+                pChess[sx][sy]->setPos(sx,sy);
+                pChess[dx][dy]->setPos(dx,dy);
+                pMainWindow->SendWinGame();
+            }
+        }
+        else if(SLevel==0&&pChess[dx][dy]->getType()>>1==9)
+        {
+            pChess[dx][dy]->setType(24);
+            std::swap(pChess[sx][sy],pChess[dx][dy]);
+            pChess[sx][sy]->setPos(sx,sy);
+            pChess[dx][dy]->setPos(dx,dy);
+        }
+        else if(SLevel>DLevel)
+        {
+            pChess[dx][dy]->setType(24);
             std::swap(pChess[sx][sy],pChess[dx][dy]);
             pChess[sx][sy]->setPos(sx,sy);
             pChess[dx][dy]->setPos(dx,dy);
         }
         else if(SLevel<DLevel)
         {
-            pChess[sx][sy]->setType(22);
+            pChess[sx][sy]->setType(24);
             std::swap(pChess[sx][sy],pChess[dx][dy]);
             pChess[sx][sy]->setPos(sx,sy);
             pChess[dx][dy]->setPos(dx,dy);
         }
         else
         {
-            pChess[sx][sy]->setType(22);
-            pChess[dx][dy]->setType(22);
+            pChess[sx][sy]->setType(24);
+            pChess[dx][dy]->setType(24);
         }
     }
     if(pChess[dx][dy]->CheckEmpty())
     {
         //move
-        if(CheckAccessibility(sx,sy,dx,dy,pChess[sx][sy]->GetType()>>1==0))
+        if(CheckAccessibility(sx,sy,dx,dy, pChess[sx][sy]->getType() >> 1 == 0))
         {
             std::swap(pChess[sx][sy],pChess[dx][dy]);
             pChess[sx][sy]->setPos(sx,sy);
@@ -139,7 +174,6 @@ bool ChessBoard::CheckAccessibility(int sx, int sy, int dx, int dy, int type) //
         for(const std::pair<int,int> t:HQs)
             if(S==t||D==t)
                 return true;
-
     }
     if(!pChess[sx][sy]->CheckOnRailway())
         return false;
@@ -158,6 +192,10 @@ bool ChessBoard::CheckAccessibility(int sx, int sy, int dx, int dy, int type) //
         q.pop();
         for(int i=0;i<4;i++)
         {
+            if(((x==6&&y==2)||(x==6&&y==4))&&i==2)
+                continue;
+            if(((x==7&&y==2)||(x==7&&y==4))&&i==0)
+                continue;
             int nx=x+dltx[i],ny=y+dlty[i];
             if(nx==dx&&ny==dy)
                 return true;
@@ -171,7 +209,56 @@ bool ChessBoard::CheckAccessibility(int sx, int sy, int dx, int dy, int type) //
     return false;
 }
 
-void ChessBoard::DecodeBoard(QByteArray s)
+void ChessBoard::DecodeBoard(const QByteArray& s)
 {
+    for(int x=1;x<=12;x++)
+        for(int y=1;y<=5;y++)
+        {
+            int id=(x-1)*5+y;
+            const int* Array=(const int*)s.constData();
+            pChess[x][y]->setType(Array[id]>>1);
+            pChess[x][y]->setHidden(Array[id]&1);
+        }
+}
 
+void ChessBoard::setPlayerColor(int C)
+{
+    PlayerColor=C;
+}
+
+int ChessBoard::getPlayerColor() const
+{
+    return PlayerColor;
+}
+
+bool ChessBoard::getInTurn() const
+{
+    return InTurn;
+}
+
+void ChessBoard::TurnBegin()
+{
+    pTimer1s->start();
+    RemainSecond=20;
+    pMainWindow->setLCDTime(20);
+    InTurn=true;
+}
+
+void ChessBoard::TurnEnd()
+{
+    InTurn=false;
+}
+
+void ChessBoard::setpMainWindow(MainWindow *p)
+{
+    pMainWindow=p;
+}
+
+bool ChessBoard::checkMineClear(int c) const
+{
+    for(int x=1;x<=12;x++)
+        for(int y=1;y<=5;y++)
+            if(pChess[x][y]->getType()==18+c)
+                return false;
+   return true;
 }

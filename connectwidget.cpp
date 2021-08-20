@@ -6,13 +6,13 @@
 
 #include <QRegularExpression>
 #include <QValidator>
+#include <QMessageBox>
 #include "connectwidget.h"
 #include "ui_connectwidget.h"
 
 ConnectWidget::ConnectWidget(QWidget *parent) :
 QWidget(parent), ui(new Ui::ConnectWidget) {
     ui->setupUi(this);
-    pIPErrorDialog=new IPErrorDialog;
 
     QRegularExpression rx(R"(^(25[0-5]|2[0-4]\d|[0-1]?\d?\d)(\.(25[0-5]|2[0-4]\d|[0-1]?\d?\d)){3}$)");
     QValidator *val=new QRegularExpressionValidator(rx,ui->lineEdit);
@@ -22,7 +22,7 @@ QWidget(parent), ui(new Ui::ConnectWidget) {
     connect(ui->pushButton_2,&QPushButton::clicked,this,[&](){
         if(!ui->lineEdit->hasAcceptableInput())
         {
-            pIPErrorDialog->show();
+            QMessageBox::information(nullptr,"IP Format Error","IP Format Error!");
             return;
         }
         emit SaveIP(ui->lineEdit->text());

@@ -17,7 +17,7 @@ Chess::Chess(ChessBoard *_pBoard,QWidget *parent,int _type,int hidden):QLabel(pa
     if(!Hidden)
         Pmap=new QPixmap(FileNames[type]);
     else
-        Pmap=new QPixmap(FileNames[23]);
+        Pmap=new QPixmap(FileNames[25]);
     PressDown=false;
 }
 
@@ -30,13 +30,13 @@ void Chess::setPos(int _x,int _y)
 
 void Chess::setType(int _type)
 {
-    Q_ASSERT((_type>=0)&&(_type<=23));
+    Q_ASSERT((_type>=0)&&(_type<=25));
     type=_type;
     delete Pmap;
     if(!Hidden)
         Pmap=new QPixmap(FileNames[type]);
     else
-        Pmap=new QPixmap(FileNames[23]);
+        Pmap=new QPixmap(FileNames[25]);
 }
 
 void Chess::swapHide()
@@ -46,7 +46,7 @@ void Chess::swapHide()
     if(!Hidden)
         Pmap=new QPixmap(FileNames[type]);
     else
-        Pmap=new QPixmap(FileNames[23]);
+        Pmap=new QPixmap(FileNames[25]);
 }
 
 void Chess::paintEvent(QPaintEvent *event)
@@ -63,15 +63,19 @@ void Chess::paintEvent(QPaintEvent *event)
 
 void Chess::mousePressEvent(QMouseEvent *event)
 {
-    if(event->button()==Qt::LeftButton)
+    if(event->button()==Qt::LeftButton&&pBoard->getInTurn())
     {
-        if(PressDown&&Hidden&&((type>>1)!=11))
+        if((type&1)==pBoard->getPlayerColor())
         {
-            swapHide();
-            this->update();
-            //send flip message to server
+            if(PressDown&&Hidden&&((type>>1)!=11))
+            {
+                swapHide();
+                this->update();
+                pBoard->TurnEnd();
+                //send flip message to server
+            }
+            swapPress();
         }
-        swapPress();
         emit ChessClicked(x,y);
     }
 }
@@ -98,10 +102,10 @@ bool Chess::CheckOnRailway() const
 
 bool Chess::CheckEmpty() const
 {
-    return type==22;
+    return type==24;
 }
 
-bool Chess::CheckHidden() const
+bool Chess::checkHidden() const
 {
     return Hidden;
 }
@@ -116,7 +120,7 @@ int Chess::GetY() const
     return y;
 }
 
-int Chess::GetType() const
+int Chess::getType() const
 {
     return type;
 }
