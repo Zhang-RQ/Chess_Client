@@ -24,16 +24,22 @@ MainWindow::MainWindow(QWidget *parent)
     ui->menuPlayt->addAction(actionAdmitDefeat);
 
     connect(actionConnectToServer,&QAction::triggered,this,&MainWindow::ConnectToServer);
+    connect(actionCreateConnection,&QAction::triggered,this,&MainWindow::CreateConnection);
     connect(actionStart,&QAction::triggered,this,&MainWindow::StartGame);
     connect(actionAdmitDefeat,&QAction::triggered,this,&MainWindow::AdmitDefeat);
 
     connect(ui->pushButton,&QPushButton::clicked,actionStart,&QAction::triggered);
     connect(ui->pushButton_2,&QPushButton::clicked,actionAdmitDefeat,&QAction::triggered);
-
+    connect(ui->pushButton_3,&QPushButton::clicked,actionCreateConnection,&QAction::triggered);
 
     pConnectWidget=new ConnectWidget;
     connect(pConnectWidget,&ConnectWidget::SaveIP,this,&MainWindow::SaveIP);
 
+    pTSocket=new QTcpSocket(this);
+
+    connect(pTSocket,&QTcpSocket::readyRead,this,&MainWindow::HandleTransmission);
+    connect(pTSocket,&QTcpSocket::connected,[&](){ReportConnectResult(1);});
+    connect(pTSocket,&QTcpSocket::disconnected,[&](){ReportConnectResult(2);});
 }
 
 MainWindow::~MainWindow()
@@ -60,4 +66,35 @@ void MainWindow::AdmitDefeat()
 void MainWindow::SaveIP(QString IP)
 {
     ServerIP=IP;
+}
+
+void MainWindow::ReportConnectResult(int result)
+{
+    if(result==0)
+    {
+        qDebug("Connect Failed");
+    }
+    if(result==1)
+    {
+        pTSocket->write("Hello Server!");
+        qDebug("Connect Successfully");
+    }
+    if(result==2)
+    {
+        qDebug("Disconnected!");
+    }
+}
+
+void MainWindow::CreateConnection()
+{
+    if(ServerIP==QString())
+        return ReportConnectResult(0);
+    pTSocket->connectToHost(ServerIP,23333);
+    qDebug()<<"Connecting "<<ServerIP<<Qt::endl;
+}
+
+void MainWindow::HandleTransmission()
+{
+    QByteArray msg=pTSocket->readAll();
+    qDebug()<<"Incoming transmission:"<<msg<<Qt::endl;
 }

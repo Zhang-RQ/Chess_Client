@@ -12,7 +12,8 @@ find_package(Qt6 COMPONENTS
         Core
         Gui
         Widgets
-        REQUIRED)
+        REQUIRED
+        Network)
 
 add_executable(Chess_Client main.cpp mainwindow.cpp
         resource.qrc chessboard.cpp
@@ -22,6 +23,7 @@ target_link_libraries(Chess_Client
         Qt::Core
         Qt::Gui
         Qt::Widgets
+        Qt::Network
         )
 
 if (WIN32)
@@ -45,7 +47,7 @@ if (WIN32)
                 "${QT_INSTALL_PATH}/plugins/platforms/qwindows${DEBUG_SUFFIX}.dll"
                 "$<TARGET_FILE_DIR:${PROJECT_NAME}>/plugins/platforms/")
     endif ()
-    foreach (QT_LIB Core Gui Widgets)
+    foreach (QT_LIB Core Gui Widgets Network)
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
                 COMMAND ${CMAKE_COMMAND} -E copy
                 "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"

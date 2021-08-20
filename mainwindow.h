@@ -17,13 +17,13 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
+    void ReportConnectResult(int result);
 
 private:
     ConnectWidget *pConnectWidget;
     Ui::MainWindow *ui;
     QAction *actionConnectToServer,*actionStart,*actionAdmitDefeat,*actionCreateConnection;
     QString ServerIP;
-    QTcpServer *pTServer; //sender
     QTcpSocket *pTSocket; //receiver
 
 public slots:
@@ -31,5 +31,7 @@ public slots:
     void StartGame();
     void AdmitDefeat();
     void SaveIP(QString IP);
+    void CreateConnection();
+    void HandleTransmission();
 };
 #endif // MAINWINDOW_H
