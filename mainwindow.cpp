@@ -131,6 +131,16 @@ void MainWindow::Handshake()
 void MainWindow::SetColor(int C)
 {
     pBoard->setPlayerColor(C);
+    if(C)
+    {
+        ui->label_4->setText("红");
+        ui->label_4->setStyleSheet("color:red");
+    }
+    else
+    {
+        ui->label_4->setText("蓝");
+        ui->label_4->setStyleSheet("color:blue");
+    }
 }
 
 void MainWindow::StartGame(int First)
@@ -169,4 +179,12 @@ void MainWindow::SendBoard()
 {
     QByteArray msg=pBoard->EncodeBoard();
     pTSocket->write(msg);
+}
+
+void MainWindow::SwitchPlayer(int p)
+{
+    if(p==0)
+        ui->label_6->setText("你");
+    else
+        ui->label_6->setText("对方");
 }

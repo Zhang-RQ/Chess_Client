@@ -30,6 +30,7 @@ public:
     void SendEndGame(int result);
     void SendBoard();
     void EndGame(int result);
+    void SwitchPlayer(int p);
 
 private:
     ConnectWidget *pConnectWidget;

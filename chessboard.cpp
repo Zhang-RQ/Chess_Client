@@ -258,6 +258,7 @@ bool ChessBoard::getInTurn() const
 
 void ChessBoard::TurnBegin()
 {
+    pMainWindow->SwitchPlayer(0);
     pTimer1s->start();
     RemainSecond=20;
     pMainWindow->setLCDTime(20);
@@ -266,6 +267,7 @@ void ChessBoard::TurnBegin()
 
 void ChessBoard::TurnEnd()
 {
+    pMainWindow->SwitchPlayer(1);
     ++Rounds;
     InTurn=false;
     pMainWindow->SendBoard();
