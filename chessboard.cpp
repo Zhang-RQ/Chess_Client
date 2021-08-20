@@ -10,6 +10,12 @@
 #include <utility>
 #include <set>
 
+
+const static std::pair<int,int> HQs[]={std::make_pair(3,2),std::make_pair(3,4),
+                                       std::make_pair(4,3),std::make_pair(5,2),std::make_pair(5,4),
+                                       std::make_pair(8,2),std::make_pair(8,4),
+                                       std::make_pair(9,3),std::make_pair(10,2),std::make_pair(10,4)};
+
 ChessBoard::ChessBoard(QWidget *parent): QLabel(parent)
 {
     PlayerColor=0;
@@ -74,6 +80,10 @@ void ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
         //attack
         if(!CheckAccessibility(sx,sy,dx,dy,pChess[sx][sy]->GetType()>>1==0))
             return;
+        std::pair<int,int> D=std::make_pair(dx,dy);
+        for(const std::pair<int,int>& HQ:HQs)
+            if(D==HQ)
+                return;
         int SLevel=std::min(9,pChess[sx][sy]->GetType()>>1),DLevel=std::min(9,pChess[dx][dy]->GetType()>>1);
         if(SLevel>DLevel)
         {
@@ -126,10 +136,6 @@ bool ChessBoard::CheckAccessibility(int sx, int sy, int dx, int dy, int type) //
     if(abs(sx-dx)==1&&abs(sy-dy)==1)
     {
         std::pair<int,int> S={sx,sy},D={dx,dy};
-        const static std::pair<int,int> HQs[]={std::make_pair(3,2),std::make_pair(3,4),
-                                               std::make_pair(4,3),std::make_pair(5,2),std::make_pair(5,4),
-                                               std::make_pair(8,2),std::make_pair(8,4),
-                                               std::make_pair(9,3),std::make_pair(10,2),std::make_pair(10,4)};
         for(const std::pair<int,int> t:HQs)
             if(S==t||D==t)
                 return true;
@@ -163,4 +169,9 @@ bool ChessBoard::CheckAccessibility(int sx, int sy, int dx, int dy, int type) //
         }
     }
     return false;
+}
+
+void ChessBoard::DecodeBoard(QByteArray s)
+{
+
 }
