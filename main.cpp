@@ -1,11 +1,17 @@
 #include "mainwindow.h"
 
+#include <QObject>
 #include <QApplication>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    MainWindow w;
-    w.show();
-    return a.exec();
+    int ret=998244353;
+    while(ret==998244353)
+    {
+        MainWindow w;
+        w.show();
+        ret=a.exec();
+    }
+    return ret;
 }

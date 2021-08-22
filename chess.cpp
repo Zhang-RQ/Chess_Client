@@ -30,14 +30,16 @@ void Chess::setPos(int _x,int _y)
 {
     x=_x;y=_y;
     this->setGeometry(Positions[x][y].x(), Positions[x][y].y(), DefaultWidth ,DefaultHeight);
+    /*
     std::pair<int,int> T=std::make_pair(x,y);
     bool f=false;
     for(const std::pair<int,int>& HQ:HQs)
         f|=HQ==T;
     if(type>>1==12&&f)
-        this->hide();
+        this->hide(),qDebug("%d %d hide",x,y);
     else
-        this->show();
+        this->show(),Q_ASSERT(!f);
+        */
     this->update();
 }
 
@@ -50,6 +52,17 @@ void Chess::setType(int _type)
         Pmap=new QPixmap(FileNames[type]);
     else
         Pmap=new QPixmap(FileNames[25]);
+    /*
+    std::pair<int,int> T=std::make_pair(x,y);
+    bool f=false;
+    for(const std::pair<int,int>& HQ:HQs)
+        f|=HQ==T;
+    if(type>>1==12&&f)
+        this->hide(),qDebug("%d %d hide",x,y);
+    else
+        this->show(),Q_ASSERT(!f);
+        */
+    this->update();
 }
 
 void Chess::swapHide()
@@ -60,6 +73,17 @@ void Chess::swapHide()
         Pmap=new QPixmap(FileNames[type]);
     else
         Pmap=new QPixmap(FileNames[25]);
+    /*
+    std::pair<int,int> T=std::make_pair(x,y);
+    bool f=false;
+    for(const std::pair<int,int>& HQ:HQs)
+        f|=HQ==T;
+    if(type>>1==12&&f)
+        this->hide(),qDebug("%d %d hide",x,y);
+    else
+        this->show(),Q_ASSERT(!f);
+        */
+    this->update();
 }
 
 void Chess::paintEvent(QPaintEvent *event)
@@ -78,15 +102,17 @@ void Chess::mousePressEvent(QMouseEvent *event)
 {
     if(event->button()==Qt::LeftButton&&pBoard->getInTurn())
     {
-        if((type&1)==pBoard->getPlayerColor())
+        if((type&1)==pBoard->getPlayerColor()||checkHidden())
         {
-            if(PressDown&&Hidden&&((type>>1)!=11))
+            if(PressDown&&Hidden&&((type>>1)!=12))
             {
-                swapHide();
+                setChessHidden(false);
                 this->update();
                 pBoard->TurnEnd();
-                //send flip message to server
+                if(pBoard->getInFindColor())
+                    pBoard->Flip(x,y);
             }
+            qDebug("x=%d y=%d ps=%d",x,y,PressDown);
             swapPress();
         }
         emit ChessClicked(x,y);
@@ -99,9 +125,9 @@ void Chess::swapPress()
     this->update();
 }
 
-void Chess::setPress(int x)
+void Chess::setPress(int t)
 {
-    if(x!=PressDown)
+    if(t!=PressDown)
         swapPress();
 }
 
@@ -136,4 +162,10 @@ int Chess::GetY() const
 int Chess::getType() const
 {
     return type;
+}
+
+void Chess::setChessHidden(int t)
+{
+    if(Hidden!=t)
+        swapHide();
 }

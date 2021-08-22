@@ -11,6 +11,8 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
+const char EndSign=(char)0xFF;
+
 class ChessBoard;
 
 class MainWindow : public QMainWindow
@@ -22,7 +24,7 @@ public:
     ~MainWindow() override;
     void ReportConnectResult(int result);
     void Handshake();
-    void SetColor(int C);
+    void SetColor(int C,int First);
     void StartGame(int First);
     void BoardSynchronize(const QByteArray& s);
     bool HandShakeOK;
@@ -31,6 +33,8 @@ public:
     void SendBoard();
     void EndGame(int result);
     void SwitchPlayer(int p);
+    void SendFlip(int x,int y);
+    void PublicLog(QString s);
 
 private:
     ConnectWidget *pConnectWidget;
@@ -46,5 +50,7 @@ public slots:
     void SaveIP(QString IP);
     void CreateConnection();
     void HandleTransmission();
+    void Restart();
+
 };
 #endif // MAINWINDOW_H

@@ -21,7 +21,7 @@ public:
     explicit ChessBoard(QWidget *parent=nullptr);
     bool CheckAccessibility(int sx,int sy,int dx,int dy,int type);
     void DecodeBoard(const QByteArray& s);
-    void setPlayerColor(int C);
+    void setPlayerColor(int C,int First);
     int getPlayerColor() const;
     bool getInTurn() const;
     void TurnBegin();
@@ -30,6 +30,9 @@ public:
     bool checkMineClear(int c) const;
     QByteArray EncodeBoard() const;
     void setRounds(int _rounds);
+    void Flip(int x,int y);
+    bool getInFindColor() const;
+    void DoExtraTurn();
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -37,7 +40,7 @@ protected:
 
 private:
     Chess *pChess[13][6],*Selected;
-    bool InTurn;
+    bool InTurn,InFindColor,Initialized;
     int PlayerColor,RemainSecond; //0 blue,1 red
     bool HandleTwoChessInteract(int sx,int sy,int dx,int dy);
     QTimer *pTimer1s;

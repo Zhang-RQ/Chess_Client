@@ -18,8 +18,9 @@ const static std::pair<int,int> HQs[]={std::make_pair(3,2),std::make_pair(3,4),
 
 ChessBoard::ChessBoard(QWidget *parent): QLabel(parent)
 {
+    Initialized=false;
     Rounds=0;
-    InTurn=false;
+    InTurn=false;InFindColor=true;
     PlayerColor=0;
     Selected=nullptr;
     for(int i=1;i<=12;i++)
@@ -75,19 +76,21 @@ void ChessBoard::HandlePressChess(int x, int y)
         return;
     if(Selected==nullptr)
     {
-        if((pChess[x][y]->getType() & 1) == PlayerColor)
+        if((pChess[x][y]->getType()&1)==PlayerColor||pChess[x][y]->checkHidden())
             Selected=pChess[x][y];
     }
     else
     {
         //handle move & attack
+        int sx=Selected->GetX(),sy=Selected->GetY();
+        int dx=x,dy=y;
         if(Selected!=pChess[x][y])
         {
             if(HandleTwoChessInteract(Selected->GetX(),Selected->GetY(),x,y))
                 TurnEnd();
         }
-        Selected->setPress(0);
-        pChess[x][y]->setPress(0);
+        pChess[sx][sy]->setPress(0);
+        pChess[dx][dy]->setPress(0);
         Selected=nullptr;
     }
     qDebug("Handled %d %d nullptr:%d\n",x,y,Selected==nullptr);
@@ -95,11 +98,25 @@ void ChessBoard::HandlePressChess(int x, int y)
 
 bool ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
 {
-    //qDebug("(%d,%d) -> (%d,%d) Accessibility type0:%d, type1:%d",sx,sy,dx,dy, CheckAccessibility(sx,sy,dx,dy,0),
-    //       CheckAccessibility(sx,sy,dx,dy,1));
+    qDebug("(%d,%d) -> (%d,%d) Accessibility type0:%d, type1:%d",sx,sy,dx,dy, CheckAccessibility(sx,sy,dx,dy,0),
+          CheckAccessibility(sx,sy,dx,dy,1));
     if(pChess[sx][sy]->checkHidden() || pChess[dx][dy]->checkHidden())
         return false;
-    if((pChess[sx][sy]->getType() & 1) != (pChess[dx][dy]->getType() & 1))
+    if(pChess[dx][dy]->CheckEmpty())
+    {
+        //move
+        if(CheckAccessibility(sx,sy,dx,dy, pChess[sx][sy]->getType() >> 1 == 0))
+        {
+            qDebug("Move (%d,%d) -> (%d,%d)",sx,sy,dx,dy);
+            std::swap(pChess[sx][sy],pChess[dx][dy]);
+            pChess[sx][sy]->setPos(sx,sy);
+            pChess[dx][dy]->setPos(dx,dy);
+            return true;
+        }
+        else
+            return false;
+    }
+    else if((pChess[sx][sy]->getType() & 1) != (pChess[dx][dy]->getType() & 1))
     {
         //attack
         if(!CheckAccessibility(sx,sy,dx,dy, pChess[sx][sy]->getType() >> 1 == 0))
@@ -132,6 +149,12 @@ bool ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
             pChess[dx][dy]->setPos(dx,dy);
             return true;
         }
+        else if(SLevel==DLevel||SLevel==10||DLevel==10)
+        {
+            pChess[sx][sy]->setType(24);
+            pChess[dx][dy]->setType(24);
+            return true;
+        }
         else if(SLevel>DLevel)
         {
             pChess[dx][dy]->setType(24);
@@ -148,25 +171,6 @@ bool ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
             pChess[dx][dy]->setPos(dx,dy);
             return true;
         }
-        else
-        {
-            pChess[sx][sy]->setType(24);
-            pChess[dx][dy]->setType(24);
-            return true;
-        }
-    }
-    if(pChess[dx][dy]->CheckEmpty())
-    {
-        //move
-        if(CheckAccessibility(sx,sy,dx,dy, pChess[sx][sy]->getType() >> 1 == 0))
-        {
-            std::swap(pChess[sx][sy],pChess[dx][dy]);
-            pChess[sx][sy]->setPos(sx,sy);
-            pChess[dx][dy]->setPos(dx,dy);
-            return true;
-        }
-        else
-            return false;
     }
     return false;
 }
@@ -232,18 +236,33 @@ void ChessBoard::DecodeBoard(const QByteArray& s)
 {
     ++Rounds;
     for(int x=1;x<=12;x++)
+    {
         for(int y=1;y<=5;y++)
         {
             int id=(x-1)*5+y;
-            const int* Array=(const int*)s.constData();
-            pChess[x][y]->setType(Array[id]>>1);
-            pChess[x][y]->setHidden(Array[id]&1);
+            pChess[x][y]->setType(s.constData()[id]>>1);
+            pChess[x][y]->setChessHidden(s.constData()[id]&1);
+            //qDebug("%d ",s.constData()[id]>>1);
         }
+        //qDebug("\n");
+    }
+    if(!Initialized)
+        Initialized=true;
+    else
+        TurnBegin();
 }
 
-void ChessBoard::setPlayerColor(int C)
+void ChessBoard::setPlayerColor(int C,int First)
 {
     PlayerColor=C;
+    InFindColor=false;
+    /*
+    if(!First)
+        TurnEnd();
+    else
+        TurnBegin();
+        */
+    Rounds=0;
 }
 
 int ChessBoard::getPlayerColor() const
@@ -263,10 +282,24 @@ void ChessBoard::TurnBegin()
     RemainSecond=20;
     pMainWindow->setLCDTime(20);
     InTurn=true;
+    bool ok=false;
+    if(InFindColor)
+        ok=true;
+    for(int x=1;x<=12;x++)
+        for(int y=1;y<=5;y++)
+            if(!pChess[x][y]->isHidden()&&((pChess[x][y]->getType()&1)==PlayerColor))
+                for(int dx=1;dx<=12;dx++)
+                    for(int dy=1;dy<=5;dy++)
+                        if(pChess[dx][dy]->CheckEmpty())
+                            ok|=CheckAccessibility(x,y,dx,dy,pChess[x][y]->getType()>>1==0);
+    if(!ok)
+        qDebug("Can't move"),pMainWindow->EndGame(0),pMainWindow->SendEndGame(0);
 }
 
 void ChessBoard::TurnEnd()
 {
+    pTimer1s->stop();
+    pMainWindow->setLCDTime(20);
     pMainWindow->SwitchPlayer(1);
     ++Rounds;
     InTurn=false;
@@ -308,4 +341,19 @@ void ChessBoard::AdmitDefeat()
         QMessageBox::information(nullptr,"Defeat Fail","Defeat Fail! You can only defeat after 20 rounds.");
     else
         pMainWindow->SendEndGame(0),pMainWindow->EndGame(0);
+}
+
+void ChessBoard::Flip(int x,int y)
+{
+    pMainWindow->SendFlip(x,y);
+}
+
+bool ChessBoard::getInFindColor() const
+{
+    return InFindColor;
+}
+
+void ChessBoard::DoExtraTurn()
+{
+
 }

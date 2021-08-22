@@ -40,6 +40,7 @@ QWidget(parent), ui(new Ui::ConnectWidget) {
     connect(ui->pushButton_13,&QPushButton::clicked,this,[&](){this->EnterChar('0');});
     connect(ui->pushButton_14,&QPushButton::clicked,this,[&](){this->EnterChar('.');});
     connect(ui->pushButton_6,&QPushButton::clicked,ui->lineEdit,&QLineEdit::backspace);
+    ui->lineEdit->setText("127.0.0.1");
 }
 
 ConnectWidget::~ConnectWidget() {

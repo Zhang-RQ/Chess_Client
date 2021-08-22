@@ -74,6 +74,7 @@ public:
     int GetX() const;
     int GetY() const;
     int getType() const;
+    void setChessHidden(int t);
 
 protected:
     void paintEvent(QPaintEvent *event) override;

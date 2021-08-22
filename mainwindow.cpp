@@ -39,6 +39,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->pushButton,&QPushButton::clicked,actionStart,&QAction::triggered);
     connect(ui->pushButton_2,&QPushButton::clicked,actionAdmitDefeat,&QAction::triggered);
     connect(ui->pushButton_3,&QPushButton::clicked,actionCreateConnection,&QAction::triggered);
+    connect(ui->pushButton_4,&QPushButton::clicked,this,&MainWindow::Restart);
 
     pConnectWidget=new ConnectWidget;
     connect(pConnectWidget,&ConnectWidget::SaveIP,this,&MainWindow::SaveIP);
@@ -68,6 +69,7 @@ void MainWindow::ReadyGame()
     {
         QByteArray msg;
         msg.append((char)3);
+        msg.append(EndSign);
         pTSocket->write(msg);
     }
     else
@@ -89,6 +91,7 @@ void MainWindow::ReportConnectResult(int result)
     }
     if(result==1)
     {
+        PublicLog("Connect Successfully\n");
         qDebug("Connect Successfully");
     }
     if(result==2)
@@ -101,22 +104,32 @@ void MainWindow::CreateConnection()
 {
     if(ServerIP==QString())
         return ReportConnectResult(0);
-    pTSocket->connectToHost(ServerIP,25333);
+    pTSocket->connectToHost(ServerIP,23333);
+    pTSocket->setSocketOption(QAbstractSocket::LowDelayOption,1);
     qDebug()<<"Connecting "<<ServerIP<<Qt::endl;
 }
 
 void MainWindow::HandleTransmission()
 {
-    QByteArray msg=pTSocket->readAll();
-    int Sign=(int)msg.constData()[0];
-    switch(Sign)
+    QByteArray msgAll=pTSocket->readAll();
+    QList<QByteArray> V=msgAll.split(EndSign);
+    qDebug("Handle Transmission len=%d package num=%d",msgAll.length(),V.length());
+    qDebug()<<msgAll;
+    for(const QByteArray& msg:V)
     {
-        case 0:Handshake();break;
-        case 2:StartGame((int)msg.constData()[1]);break;
-        case 4:SetColor((int)msg.constData()[1]);break;
-        case 5:BoardSynchronize(msg);break;
-        case 7:EndGame((int)msg.constData()[1]);break;
-        default:;
+        if(msg.length()==0)
+            continue;
+        int Sign=(int)msg.constData()[0];
+        qDebug()<<" "<<Sign<<" "<<msg.length()<<Qt::endl;
+        switch(Sign)
+        {
+            case 0:Handshake();break;
+            case 2:StartGame((int)msg.constData()[1]);break;
+            case 4:SetColor((int)msg.constData()[1],(int)msg.constData()[2]);break;
+            case 5:BoardSynchronize(msg);break;
+            case 7:EndGame((int)msg.constData()[1]);break;
+            default:;
+        }
     }
 }
 
@@ -124,13 +137,16 @@ void MainWindow::Handshake()
 {
     QByteArray msg;
     msg.append((char)1);
+    msg.append(EndSign);
     pTSocket->write(msg);
     HandShakeOK=true;
 }
 
-void MainWindow::SetColor(int C)
+void MainWindow::SetColor(int C,int First)
 {
-    pBoard->setPlayerColor(C);
+    qDebug("SetColor c=%d first=%d",C,First);
+    pBoard->setRounds(0);
+    pBoard->setPlayerColor(C,First);
     if(C)
     {
         ui->label_4->setText("红");
@@ -145,9 +161,11 @@ void MainWindow::SetColor(int C)
 
 void MainWindow::StartGame(int First)
 {
+    qDebug()<<"Start Game "<<First;
     if(First)
         pBoard->TurnBegin();
-    pBoard->setRounds(0);
+    else
+        SwitchPlayer(1);
 }
 
 void MainWindow::BoardSynchronize(const QByteArray &s)
@@ -163,7 +181,9 @@ void MainWindow::setLCDTime(int t)
 void MainWindow::SendEndGame(int result)
 {
     QByteArray msg;
-    msg.append((char)8);
+    msg.append((char)6);
+    msg.append(result);
+    msg.append(EndSign);
     pTSocket->write(msg);
 }
 
@@ -178,6 +198,8 @@ void MainWindow::EndGame(int result)
 void MainWindow::SendBoard()
 {
     QByteArray msg=pBoard->EncodeBoard();
+    msg.append(EndSign);
+    qDebug()<<"SendBoard:"<<msg;
     pTSocket->write(msg);
 }
 
@@ -187,4 +209,25 @@ void MainWindow::SwitchPlayer(int p)
         ui->label_6->setText("你");
     else
         ui->label_6->setText("对方");
+}
+
+void MainWindow::SendFlip(int x, int y)
+{
+    qDebug("Send Flip %d %d",x,y);
+    QByteArray msg;
+    msg.append((char)7);
+    msg.append((char)x);
+    msg.append((char)y);
+    msg.append(EndSign);
+    pTSocket->write(msg);
+}
+
+void MainWindow::PublicLog(QString s)
+{
+    ui->textBrowser->append(s);
+}
+
+void MainWindow::Restart()
+{
+    qApp->exit(998244353);
 }
