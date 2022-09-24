@@ -102,9 +102,11 @@ void Chess::mousePressEvent(QMouseEvent *event)
 {
     if(event->button()==Qt::LeftButton&&pBoard->getInTurn())
     {
-        if((type&1)==pBoard->getPlayerColor()||checkHidden())
+        qDebug("x=%d y=%d type=%d color=%d",x,y,type,pBoard->getPlayerColor());
+        if(((type&1)==pBoard->getPlayerColor()||checkHidden())&&((type>>1)!=12))
         {
-            if(PressDown&&Hidden&&((type>>1)!=12))
+            bool PSD=PressDown;
+            if(PressDown&&Hidden)
             {
                 setChessHidden(false);
                 this->update();
@@ -112,8 +114,8 @@ void Chess::mousePressEvent(QMouseEvent *event)
                 if(pBoard->getInFindColor())
                     pBoard->Flip(x,y);
             }
+            setPress(PSD^1);
             qDebug("x=%d y=%d ps=%d",x,y,PressDown);
-            swapPress();
         }
         emit ChessClicked(x,y);
     }

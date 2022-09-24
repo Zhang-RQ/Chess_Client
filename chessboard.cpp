@@ -42,14 +42,13 @@ ChessBoard::ChessBoard(QWidget *parent): QLabel(parent)
         pMainWindow->setLCDTime(RemainSecond);
         if(RemainSecond==0)
         {
+            pTimer1s->stop();
             ++TimeoutTimes;
-            TurnEnd();
             if(TimeoutTimes==3)
-                pMainWindow->SendEndGame(0),pMainWindow->EndGame(0);
+                pMainWindow->SendEndGame(1),pMainWindow->EndGame(0);
         }
-        else
-            pTimer1s->start();
     });
+    GameEnd=false;
 }
 
 void ChessBoard::paintEvent(QPaintEvent *event)
@@ -134,7 +133,7 @@ bool ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
                 std::swap(pChess[sx][sy],pChess[dx][dy]);
                 pChess[sx][sy]->setPos(sx,sy);
                 pChess[dx][dy]->setPos(dx,dy);
-                pMainWindow->SendEndGame(1);
+                pMainWindow->SendEndGame(0);
                 pMainWindow->EndGame(1);
                 return true;
             }
@@ -165,10 +164,8 @@ bool ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
         }
         else if(SLevel<DLevel)
         {
+            return false;
             pChess[sx][sy]->setType(24);
-            std::swap(pChess[sx][sy],pChess[dx][dy]);
-            pChess[sx][sy]->setPos(sx,sy);
-            pChess[dx][dy]->setPos(dx,dy);
             return true;
         }
     }
@@ -178,16 +175,19 @@ bool ChessBoard::HandleTwoChessInteract(int sx, int sy, int dx, int dy)
 //BFS
 bool ChessBoard::CheckAccessibility(int sx, int sy, int dx, int dy, int type) //type==1 means Engineer
 {
+    if(pChess[sx][sy]->getType()>>1==9||pChess[sx][sy]->getType()>>1==11)
+        return false;
     if(abs(sx-dx)+abs(sy-dy)==1)
     {
         if(sx==dx)
             return true;
-        const static std::pair<int,int> ExPoints[]={std::make_pair(6,2),std::make_pair(6,4),
-                                                    std::make_pair(7,2),std::make_pair(7,4)};
+        const static std::pair<int,int> ExPointsUp[]={std::make_pair(6,2),std::make_pair(6,4)};
+        const static std::pair<int,int> ExPointsDown[]={std::make_pair(7,2),std::make_pair(7,4)};
         std::pair<int,int> S={sx,sy},D={dx,dy};
         bool f=false;
-        for(const std::pair<int,int> t:ExPoints)
-            f|=S==t||D==t;
+        for(int i=0;i<2;i++)
+            f|=S==ExPointsUp[i]&&D==ExPointsDown[i],
+            f|=D==ExPointsUp[i]&&S==ExPointsDown[i];
         if(!f)
             return true;
     }
@@ -277,6 +277,10 @@ bool ChessBoard::getInTurn() const
 
 void ChessBoard::TurnBegin()
 {
+    if(GameEnd)
+        return;
+    if(!InFindColor)
+        pMainWindow->PublicLog(QString("Round #%1").arg(Rounds));
     pMainWindow->SwitchPlayer(0);
     pTimer1s->start();
     RemainSecond=20;
@@ -287,21 +291,31 @@ void ChessBoard::TurnBegin()
         ok=true;
     for(int x=1;x<=12;x++)
         for(int y=1;y<=5;y++)
+            ok|=pChess[x][y]->isHidden();
+    for(int x=1;x<=12;x++)
+        for(int y=1;y<=5;y++)
             if(!pChess[x][y]->isHidden()&&((pChess[x][y]->getType()&1)==PlayerColor))
                 for(int dx=1;dx<=12;dx++)
                     for(int dy=1;dy<=5;dy++)
                         if(pChess[dx][dy]->CheckEmpty())
                             ok|=CheckAccessibility(x,y,dx,dy,pChess[x][y]->getType()>>1==0);
     if(!ok)
-        qDebug("Can't move"),pMainWindow->EndGame(0),pMainWindow->SendEndGame(0);
+        qDebug("Can't move"),pMainWindow->EndGame(0),pMainWindow->SendEndGame(1);
 }
 
 void ChessBoard::TurnEnd()
 {
+    if(Selected!=nullptr)
+    {
+        Selected->setPress(false);
+        Selected=nullptr;
+    }
     pTimer1s->stop();
     pMainWindow->setLCDTime(20);
     pMainWindow->SwitchPlayer(1);
     ++Rounds;
+    if(!InFindColor)
+        pMainWindow->PublicLog(QString("Round #%1").arg(Rounds));
     InTurn=false;
     pMainWindow->SendBoard();
 }
@@ -340,7 +354,7 @@ void ChessBoard::AdmitDefeat()
     if(Rounds<20)
         QMessageBox::information(nullptr,"Defeat Fail","Defeat Fail! You can only defeat after 20 rounds.");
     else
-        pMainWindow->SendEndGame(0),pMainWindow->EndGame(0);
+        pMainWindow->SendEndGame(1),pMainWindow->EndGame(0);
 }
 
 void ChessBoard::Flip(int x,int y)
@@ -353,7 +367,7 @@ bool ChessBoard::getInFindColor() const
     return InFindColor;
 }
 
-void ChessBoard::DoExtraTurn()
+void ChessBoard::setGameEnd(int t)
 {
-
+    GameEnd=t;
 }

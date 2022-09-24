@@ -40,9 +40,11 @@ private:
     ConnectWidget *pConnectWidget;
     Ui::MainWindow *ui;
     QAction *actionConnectToServer,*actionStart,*actionAdmitDefeat,*actionCreateConnection;
+    QAction *actionCloseConnection;
     QString ServerIP;
     QTcpSocket *pTSocket; //receiver
     ChessBoard *pBoard;
+    QTimer *pTimer3s;
 
 public slots:
     void ConnectToServer();
@@ -51,6 +53,7 @@ public slots:
     void CreateConnection();
     void HandleTransmission();
     void Restart();
+    void CloseConnection();
 
 };
 #endif // MAINWINDOW_H

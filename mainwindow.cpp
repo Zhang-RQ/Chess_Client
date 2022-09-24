@@ -31,15 +31,21 @@ MainWindow::MainWindow(QWidget *parent)
     actionAdmitDefeat->setText("Admit defeat");
     ui->menuPlayt->addAction(actionAdmitDefeat);
 
+    actionCloseConnection=new QAction(this);
+    actionCloseConnection->setText("Close Connection");
+    ui->menuConnect->addAction(actionCloseConnection);
+
     connect(actionConnectToServer,&QAction::triggered,this,&MainWindow::ConnectToServer);
     connect(actionCreateConnection,&QAction::triggered,this,&MainWindow::CreateConnection);
     connect(actionStart,&QAction::triggered,this, &MainWindow::ReadyGame);
     connect(actionAdmitDefeat,&QAction::triggered,pBoard,&ChessBoard::AdmitDefeat);
+    connect(actionCloseConnection,&QAction::triggered,this,&MainWindow::CloseConnection);
 
     connect(ui->pushButton,&QPushButton::clicked,actionStart,&QAction::triggered);
     connect(ui->pushButton_2,&QPushButton::clicked,actionAdmitDefeat,&QAction::triggered);
     connect(ui->pushButton_3,&QPushButton::clicked,actionCreateConnection,&QAction::triggered);
     connect(ui->pushButton_4,&QPushButton::clicked,this,&MainWindow::Restart);
+    connect(ui->pushButton_5,&QPushButton::clicked,actionCloseConnection,&QAction::triggered);
 
     pConnectWidget=new ConnectWidget;
     connect(pConnectWidget,&ConnectWidget::SaveIP,this,&MainWindow::SaveIP);
@@ -47,8 +53,22 @@ MainWindow::MainWindow(QWidget *parent)
     pTSocket=new QTcpSocket(this);
 
     connect(pTSocket,&QTcpSocket::readyRead,this,&MainWindow::HandleTransmission);
-    connect(pTSocket,&QTcpSocket::connected,[&](){ReportConnectResult(1);});
-    connect(pTSocket,&QTcpSocket::disconnected,[&](){ReportConnectResult(2);});
+    connect(pTSocket,&QTcpSocket::connected,[&](){
+        ReportConnectResult(1);
+        pTimer3s->start();
+        connect(pTimer3s,&QTimer::timeout,[&](){
+            QByteArray msg;
+            msg.append((char)9);msg.append(EndSign);
+            pTSocket->write(msg);
+        });
+    });
+    connect(pTSocket,&QTcpSocket::disconnected,[&](){
+        ReportConnectResult(2);
+        pTimer3s->stop();
+    });
+
+    pTimer3s=new QTimer;
+    pTimer3s->setInterval(3000);
 }
 
 MainWindow::~MainWindow()
@@ -87,6 +107,7 @@ void MainWindow::ReportConnectResult(int result)
 {
     if(result==0)
     {
+        PublicLog("Connecnt Failed\n");
         qDebug("Connect Failed");
     }
     if(result==1)
@@ -96,6 +117,7 @@ void MainWindow::ReportConnectResult(int result)
     }
     if(result==2)
     {
+        PublicLog("Disconnected!\n");
         qDebug("Disconnected!");
     }
 }
@@ -114,7 +136,6 @@ void MainWindow::HandleTransmission()
     QByteArray msgAll=pTSocket->readAll();
     QList<QByteArray> V=msgAll.split(EndSign);
     qDebug("Handle Transmission len=%d package num=%d",msgAll.length(),V.length());
-    qDebug()<<msgAll;
     for(const QByteArray& msg:V)
     {
         if(msg.length()==0)
@@ -127,8 +148,9 @@ void MainWindow::HandleTransmission()
             case 2:StartGame((int)msg.constData()[1]);break;
             case 4:SetColor((int)msg.constData()[1],(int)msg.constData()[2]);break;
             case 5:BoardSynchronize(msg);break;
-            case 7:EndGame((int)msg.constData()[1]);break;
-            default:;
+            case 6:EndGame((int)msg.constData()[1]);break;
+            case 8:pBoard->TurnEnd();QMessageBox::information(nullptr,"Opponent Disconnected.","Opponent Disconnected.");
+            default:Q_ASSERT(0);
         }
     }
 }
@@ -189,6 +211,8 @@ void MainWindow::SendEndGame(int result)
 
 void MainWindow::EndGame(int result)
 {
+    pBoard->setGameEnd(true);
+    pBoard->TurnEnd();
     if(result)
         QMessageBox::information(nullptr,"Game Ended!","Game Ended! You Win!");
     else
@@ -197,9 +221,9 @@ void MainWindow::EndGame(int result)
 
 void MainWindow::SendBoard()
 {
+    qDebug("Send Board");
     QByteArray msg=pBoard->EncodeBoard();
     msg.append(EndSign);
-    qDebug()<<"SendBoard:"<<msg;
     pTSocket->write(msg);
 }
 
@@ -230,4 +254,10 @@ void MainWindow::PublicLog(QString s)
 void MainWindow::Restart()
 {
     qApp->exit(998244353);
+}
+
+void MainWindow::CloseConnection()
+{
+    if(pTSocket->isValid())
+        pTSocket->close(),Restart();
 }

@@ -32,7 +32,7 @@ public:
     void setRounds(int _rounds);
     void Flip(int x,int y);
     bool getInFindColor() const;
-    void DoExtraTurn();
+    void setGameEnd(int t);
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -46,6 +46,7 @@ private:
     QTimer *pTimer1s;
     MainWindow *pMainWindow;
     int Rounds,TimeoutTimes;
+    bool GameEnd;
 
 public slots:
     void HandlePressChess(int x,int y);

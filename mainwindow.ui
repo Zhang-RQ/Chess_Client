@@ -77,9 +77,9 @@
     <property name="geometry">
      <rect>
       <x>510</x>
-      <y>550</y>
+      <y>535</y>
       <width>141</width>
-      <height>131</height>
+      <height>151</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -108,6 +108,13 @@
       <widget class="QPushButton" name="pushButton_4">
        <property name="text">
         <string>Restart</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_5">
+       <property name="text">
+        <string>Close Connection</string>
        </property>
       </widget>
      </item>
@@ -179,7 +186,7 @@
       <x>510</x>
       <y>290</y>
       <width>141</width>
-      <height>261</height>
+      <height>241</height>
      </rect>
     </property>
    </widget>
